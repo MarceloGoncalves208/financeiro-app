@@ -48,6 +48,30 @@ function initSchema() {
   `);
 
   seedPlanoCounts();
+  seedHistoricalData();
+}
+
+function seedHistoricalData() {
+  const count = db.prepare('SELECT COUNT(*) as c FROM lancamentos').get();
+  if (count.c > 0) return;
+
+  const importFile = path.join(__dirname, 'import_data.json');
+  if (!fs.existsSync(importFile)) return;
+
+  try {
+    const data = JSON.parse(fs.readFileSync(importFile, 'utf-8'));
+    const insert = db.prepare(`
+      INSERT OR IGNORE INTO lancamentos (data, cod, valor, discriminacao, flag, dia, mes)
+      VALUES (@data, @cod, @valor, @discriminacao, @flag, @dia, @mes)
+    `);
+    const importMany = db.transaction((rows) => {
+      for (const row of rows) insert.run(row);
+    });
+    importMany(data);
+    console.log('Histórico importado: ' + data.length + ' lançamentos (2020-2026).');
+  } catch (e) {
+    console.error('Erro ao importar histórico:', e.message);
+  }
 }
 
 function seedPlanoCounts() {
