@@ -1,7 +1,10 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'financeiro.db');
+// Em produção (Railway), usa o volume persistente em /app/data
+const DB_PATH = process.env.RAILWAY_ENVIRONMENT
+  ? '/app/data/financeiro.db'
+  : path.join(__dirname, 'financeiro.db');
 
 let db;
 
