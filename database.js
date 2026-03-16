@@ -1,10 +1,18 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
 // Em produção (Railway), usa o volume persistente em /app/data
-const DB_PATH = process.env.RAILWAY_ENVIRONMENT
-  ? '/app/data/financeiro.db'
-  : path.join(__dirname, 'financeiro.db');
+const DB_DIR = process.env.RAILWAY_ENVIRONMENT
+  ? '/app/data'
+  : __dirname;
+
+const DB_PATH = path.join(DB_DIR, 'financeiro.db');
+
+// Garante que o diretório existe
+if (!fs.existsSync(DB_DIR)) {
+  fs.mkdirSync(DB_DIR, { recursive: true });
+}
 
 let db;
 
