@@ -21,10 +21,40 @@ import { RootStackParamList } from '../navigation/types';
 
 type RouteParams = RouteProp<RootStackParamList, 'AddLancamento'>;
 
+// Plano de contas padrão do Gula Grill — usado como fallback se Supabase retornar vazio
+const PLANO_CONTAS_PADRAO: PlanoConta[] = [
+  // Receitas
+  { cod: 1,   nome: 'Cartão',             flag: 'R', grupo_cod: null },
+  { cod: 2,   nome: 'Voucher',            flag: 'R', grupo_cod: null },
+  { cod: 3,   nome: 'Dinheiro',           flag: 'R', grupo_cod: null },
+  // Vendas / CMV
+  { cod: 101, nome: 'Buffet',             flag: 'V', grupo_cod: null },
+  { cod: 102, nome: 'Churrasqueira',      flag: 'V', grupo_cod: null },
+  { cod: 103, nome: 'Lanchonete',         flag: 'V', grupo_cod: null },
+  { cod: 104, nome: 'Bebidas',            flag: 'V', grupo_cod: null },
+  { cod: 105, nome: 'Frutas / Suco',      flag: 'V', grupo_cod: null },
+  { cod: 106, nome: 'Sobremesas',         flag: 'V', grupo_cod: null },
+  // Despesas
+  { cod: 201, nome: 'Salários',           flag: 'F', grupo_cod: null },
+  { cod: 202, nome: 'Extra',              flag: 'F', grupo_cod: null },
+  { cod: 203, nome: 'Passagem',           flag: 'F', grupo_cod: null },
+  { cod: 212, nome: 'Cedae (Água)',       flag: 'F', grupo_cod: null },
+  { cod: 215, nome: 'Outros Pessoal',     flag: 'F', grupo_cod: null },
+  { cod: 301, nome: 'Descartáveis',       flag: 'F', grupo_cod: null },
+  { cod: 302, nome: 'Carvão / Gás / Óleo', flag: 'F', grupo_cod: null },
+  { cod: 303, nome: 'Gelo',              flag: 'F', grupo_cod: null },
+  { cod: 305, nome: 'Manutenção',         flag: 'F', grupo_cod: null },
+  { cod: 307, nome: 'Coleta',             flag: 'F', grupo_cod: null },
+  // Atendimentos
+  { cod: 2000, nome: 'Buffet (Atend.)',   flag: 'AT', grupo_cod: null },
+  { cod: 3000, nome: 'Prato Feito',       flag: 'AT', grupo_cod: null },
+  { cod: 4000, nome: 'Churrasco',         flag: 'AT', grupo_cod: null },
+];
+
 const FLAG_LABELS: Record<string, string> = {
-  R: 'Receitas',
-  V: 'Vendas / CMV',
-  F: 'Despesas',
+  R:  'Receitas',
+  V:  'Vendas / CMV',
+  F:  'Despesas',
   AT: 'Atendimentos',
 };
 
@@ -42,8 +72,7 @@ export default function AddLancamentoScreen() {
   const [loadingContas, setLoadingContas] = useState(true);
   const [selectedConta, setSelectedConta] = useState<PlanoConta | null>(null);
   const [valor, setValor] = useState('');
-  const [showNotes, setShowNotes] = useState(false);
-  const [notes, setNotes] = useState('');
+  const [descricao, setDescricao] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -52,15 +81,27 @@ export default function AddLancamentoScreen() {
         const filtered = data.filter(
           (c) => flagFilter.includes(c.flag) && c.flag !== 'G'
         );
-        setPlanoContas(filtered);
+        // Usa dados do Supabase se tiver; caso contrário usa o padrão
+        if (filtered.length > 0) {
+          setPlanoContas(filtered);
+        } else {
+          setPlanoContas(
+            PLANO_CONTAS_PADRAO.filter((c) => flagFilter.includes(c.flag))
+          );
+        }
       })
-      .catch(() => Alert.alert('Erro', 'Não foi possível carregar o plano de contas.'))
+      .catch(() => {
+        // Falha na conexão: usa plano padrão silenciosamente
+        setPlanoContas(
+          PLANO_CONTAS_PADRAO.filter((c) => flagFilter.includes(c.flag))
+        );
+      })
       .finally(() => setLoadingContas(false));
   }, []);
 
   const handleSelectConta = (conta: PlanoConta) => {
     setSelectedConta(conta);
-    // Foca no campo valor após selecionar a conta
+    if (!descricao) setDescricao(conta.nome);
     setTimeout(() => valorRef.current?.focus(), 100);
   };
 
@@ -82,12 +123,11 @@ export default function AddLancamentoScreen() {
         data: hoje.toISOString().split('T')[0],
         cod: selectedConta.cod,
         valor: parsedValor,
-        discriminacao: selectedConta.nome,
+        discriminacao: descricao.trim() || selectedConta.nome,
         flag: selectedConta.flag as any,
         dia: hoje.getDate(),
         mes: hoje.getMonth() + 1,
         ano: hoje.getFullYear(),
-        observacao: notes.trim() || undefined,
       });
       navigation.goBack();
     } catch {
@@ -97,17 +137,22 @@ export default function AddLancamentoScreen() {
     }
   };
 
-  // Agrupa contas por flag na ordem definida
-  const grupos = FLAG_ORDER.filter((f) => flagFilter.includes(f)).map((flag) => ({
-    flag,
-    label: FLAG_LABELS[flag] ?? flag,
-    contas: planoContas.filter((c) => c.flag === flag),
-  })).filter((g) => g.contas.length > 0);
+  const grupos = FLAG_ORDER
+    .filter((f) => flagFilter.includes(f))
+    .map((flag) => ({
+      flag,
+      label: FLAG_LABELS[flag] ?? flag,
+      contas: planoContas.filter((c) => c.flag === flag),
+    }))
+    .filter((g) => g.contas.length > 0);
 
   if (loadingContas) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" />
+        <Text variant="bodySmall" style={{ marginTop: 12 }}>
+          Carregando contas...
+        </Text>
       </View>
     );
   }
@@ -169,45 +214,35 @@ export default function AddLancamentoScreen() {
           </View>
         ))}
 
-        {/* Campo Valor */}
+        {/* Campo Valor — sempre habilitado */}
         <TextInput
           ref={valorRef}
-          label={selectedConta ? `Valor — ${selectedConta.nome}` : 'Valor (R$)'}
+          label="Valor (R$)"
           value={valor}
           onChangeText={setValor}
           mode="outlined"
           keyboardType="decimal-pad"
           style={styles.inputValor}
           left={<TextInput.Affix text="R$" />}
-          disabled={!selectedConta}
+          placeholder="0,00"
         />
 
-        {/* Observação colapsável */}
-        {!showNotes ? (
-          <TouchableOpacity onPress={() => setShowNotes(true)} style={styles.notesLink}>
-            <Text variant="bodySmall" style={{ color: theme.colors.primary }}>
-              + Adicionar observação
-            </Text>
-          </TouchableOpacity>
-        ) : (
-          <TextInput
-            label="Observação (opcional)"
-            value={notes}
-            onChangeText={setNotes}
-            mode="outlined"
-            multiline
-            numberOfLines={2}
-            style={styles.inputNotes}
-            autoFocus
-          />
-        )}
+        {/* Campo Descrição — sempre visível */}
+        <TextInput
+          label="Descrição"
+          value={descricao}
+          onChangeText={setDescricao}
+          mode="outlined"
+          style={styles.inputDescricao}
+          placeholder="Ex: Buffet segunda-feira"
+        />
 
         {/* Botão Salvar */}
         <Button
           mode="contained"
           onPress={handleSave}
           loading={saving}
-          disabled={saving || !selectedConta || !valor}
+          disabled={saving}
           style={styles.btnSalvar}
           contentStyle={styles.btnSalvarContent}
         >
@@ -219,20 +254,14 @@ export default function AddLancamentoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scroll: {
-    padding: 16,
-  },
-  grupo: {
-    marginBottom: 20,
-  },
+  scroll: { padding: 16 },
+  grupo: { marginBottom: 20 },
   grupoLabel: {
     marginBottom: 8,
     letterSpacing: 0.8,
@@ -253,17 +282,11 @@ const styles = StyleSheet.create({
   inputValor: {
     marginTop: 8,
     marginBottom: 12,
-    fontSize: 20,
   },
-  notesLink: {
-    marginBottom: 16,
-    paddingVertical: 4,
-  },
-  inputNotes: {
-    marginBottom: 16,
+  inputDescricao: {
+    marginBottom: 20,
   },
   btnSalvar: {
-    marginTop: 8,
     marginBottom: 32,
     borderRadius: 8,
   },

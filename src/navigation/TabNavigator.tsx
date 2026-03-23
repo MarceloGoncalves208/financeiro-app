@@ -22,15 +22,22 @@ export default function TabNavigator() {
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.outline,
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
+          fontSize: 13,
+          fontWeight: '600',
+          marginTop: 2,
+        },
+        tabBarIconStyle: {
+          marginTop: 4,
         },
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.outlineVariant,
-          height: 64,
-          paddingBottom: 8,
-          paddingTop: 4,
+          height: 72,
+          paddingBottom: 10,
+          paddingTop: 6,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 2,
         },
       }}
     >
@@ -38,9 +45,9 @@ export default function TabNavigator() {
         name="Dashboard"
         component={DashboardScreen}
         options={{
-          tabBarLabel: 'Inicio',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="view-dashboard" color={color} size={size} />
+          tabBarLabel: 'Início',
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons name="view-dashboard" color={color} size={26} />
           ),
         }}
       />
@@ -48,8 +55,8 @@ export default function TabNavigator() {
         name="Receitas"
         component={IncomesScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="arrow-up-circle" color={color} size={size} />
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons name="arrow-up-circle" color={color} size={26} />
           ),
         }}
       />
@@ -57,8 +64,8 @@ export default function TabNavigator() {
         name="Despesas"
         component={ExpensesScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="arrow-down-circle" color={color} size={size} />
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons name="arrow-down-circle" color={color} size={26} />
           ),
         }}
       />
@@ -66,9 +73,9 @@ export default function TabNavigator() {
         name="Relatorios"
         component={ReportsScreen}
         options={{
-          tabBarLabel: 'Relatorios',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="chart-bar" color={color} size={size} />
+          tabBarLabel: 'Relatórios',
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons name="chart-bar" color={color} size={26} />
           ),
         }}
       />
@@ -76,8 +83,8 @@ export default function TabNavigator() {
         name="Mais"
         component={MoreScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="dots-horizontal" color={color} size={size} />
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons name="dots-horizontal" color={color} size={26} />
           ),
         }}
       />
