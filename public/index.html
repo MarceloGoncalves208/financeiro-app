@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a73e8" />
+  <meta name="description" content="Controle financeiro Comfort Shoes Calçados" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="CS Financeiro" />
+  <title>Comfort Shoes — Financeiro</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-title">Comfort Shoes — Financeiro</div>
+      <div class="header-subtitle" id="header-date">Carregando...</div>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="lancar">Lançar</button>
+      <button class="tab-btn" data-tab="hoje">Hoje</button>
+      <button class="tab-btn" data-tab="mes">Mês</button>
+    </nav>
+
+    <!-- Content -->
+    <main class="content">
+
+      <!-- ── Tab: Lançar ──────────────────────────────────────────────────── -->
+      <section id="tab-lancar" class="tab-panel active">
+        <div class="date-row">
+          <label for="input-data">Data</label>
+          <input type="date" id="input-data" class="date-input" />
+        </div>
+
+        <!-- Receitas -->
+        <div class="section-title">Receitas</div>
+        <div class="category-grid" id="grid-receitas"></div>
+
+        <!-- Despesas Fixas -->
+        <div class="section-title">Despesas Fixas</div>
+        <div class="category-grid" id="grid-despesas-f"></div>
+
+        <!-- Despesas Variáveis -->
+        <div class="section-title">Despesas Variáveis</div>
+        <div class="category-grid" id="grid-despesas-v"></div>
+
+        <!-- Banco -->
+        <div class="section-title">Banco</div>
+        <div class="category-grid" id="grid-banco"></div>
+
+        <!-- Outros -->
+        <div class="section-title" id="section-outros" style="display:none">Outros</div>
+        <div class="category-grid" id="grid-outros"></div>
+      </section>
+
+      <!-- ── Tab: Hoje ────────────────────────────────────────────────────── -->
+      <section id="tab-hoje" class="tab-panel">
+        <div id="hoje-summary" class="summary-cards">
+          <div class="summary-card receita">
+            <div class="summary-label">Receitas</div>
+            <div class="summary-value" id="hoje-receita">R$ 0,00</div>
+          </div>
+          <div class="summary-card despesa">
+            <div class="summary-label">Despesas</div>
+            <div class="summary-value" id="hoje-despesa">R$ 0,00</div>
+          </div>
+          <div class="summary-card saldo">
+            <div class="summary-label">Saldo do Dia</div>
+            <div class="summary-value" id="hoje-saldo">R$ 0,00</div>
+          </div>
+        </div>
+        <div id="hoje-list-container">
+          <div class="loading">
+            <div class="spinner"></div>
+            Carregando lançamentos...
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Tab: Mês ─────────────────────────────────────────────────────── -->
+      <section id="tab-mes" class="tab-panel">
+        <div class="month-nav">
+          <button class="month-nav-btn" id="mes-prev">&#8249;</button>
+          <div class="month-title" id="mes-titulo">Março 2026</div>
+          <button class="month-nav-btn" id="mes-next">&#8250;</button>
+        </div>
+        <div class="month-summary">
+          <div class="month-sum-card receita">
+            <div class="month-sum-label">Receitas</div>
+            <div class="month-sum-value" id="mes-receita">R$ 0,00</div>
+          </div>
+          <div class="month-sum-card despesa">
+            <div class="month-sum-label">Despesas</div>
+            <div class="month-sum-value" id="mes-despesa">R$ 0,00</div>
+          </div>
+          <div class="month-sum-card saldo">
+            <div class="month-sum-label">Saldo</div>
+            <div class="month-sum-value" id="mes-saldo">R$ 0,00</div>
+          </div>
+        </div>
+        <div id="mes-list-container">
+          <div class="loading">
+            <div class="spinner"></div>
+            Carregando mês...
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Value Input Panel -->
+  <div class="overlay" id="overlay"></div>
+  <div class="value-panel" id="value-panel">
+    <div class="value-panel-title">Informe o valor</div>
+    <div class="value-panel-category" id="panel-category-name">—</div>
+    <div class="value-display" id="value-display">
+      <span class="placeholder">R$ 0,00</span>
+    </div>
+    <div class="numpad">
+      <button class="numpad-btn" data-digit="1">1</button>
+      <button class="numpad-btn" data-digit="2">2</button>
+      <button class="numpad-btn" data-digit="3">3</button>
+      <button class="numpad-btn" data-digit="4">4</button>
+      <button class="numpad-btn" data-digit="5">5</button>
+      <button class="numpad-btn" data-digit="6">6</button>
+      <button class="numpad-btn" data-digit="7">7</button>
+      <button class="numpad-btn" data-digit="8">8</button>
+      <button class="numpad-btn" data-digit="9">9</button>
+      <button class="numpad-btn zero" data-digit="0">0</button>
+      <button class="numpad-btn del" id="btn-del">⌫</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-cancel" id="btn-cancel">Cancelar</button>
+      <button class="btn btn-confirm" id="btn-confirm" disabled>Confirmar</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
