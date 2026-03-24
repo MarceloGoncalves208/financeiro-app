@@ -47,6 +47,6 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Gula Grill Financeiro rodando em http://0.0.0.0:${PORT}`);
+  console.log(`Comfort Shoes Financeiro rodando em http://0.0.0.0:${PORT}`);
   console.log('dist:', distPath, '| existe:', fs.existsSync(distPath));
 });
