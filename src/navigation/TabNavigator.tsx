@@ -1,4 +1,5 @@
 import React from 'react';
+import { TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from 'react-native-paper';
@@ -8,9 +9,20 @@ import IncomesScreen from '../screens/IncomesScreen';
 import ExpensesScreen from '../screens/ExpensesScreen';
 import ReportsScreen from '../screens/ReportsScreen';
 import MoreScreen from '../screens/MoreScreen';
+import { useDrawer } from '../contexts/DrawerContext';
 import { TabParamList } from './types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
+
+function HamburgerButton() {
+  const theme = useTheme();
+  const { openDrawer } = useDrawer();
+  return (
+    <TouchableOpacity onPress={openDrawer} style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
+      <MaterialCommunityIcons name="menu" size={26} color={theme.colors.onSurface} />
+    </TouchableOpacity>
+  );
+}
 
 export default function TabNavigator() {
   const theme = useTheme();
@@ -18,7 +30,11 @@ export default function TabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        headerStyle: { backgroundColor: theme.colors.surface },
+        headerTintColor: theme.colors.onSurface,
+        headerShadowVisible: false,
+        headerLeft: () => <HamburgerButton />,
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.outline,
         tabBarLabelStyle: {
@@ -45,6 +61,7 @@ export default function TabNavigator() {
         name="Dashboard"
         component={DashboardScreen}
         options={{
+          headerTitle: 'Início',
           tabBarLabel: 'Início',
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="view-dashboard" color={color} size={26} />
@@ -73,6 +90,7 @@ export default function TabNavigator() {
         name="Relatorios"
         component={ReportsScreen}
         options={{
+          headerTitle: 'Relatórios',
           tabBarLabel: 'Relatórios',
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="chart-bar" color={color} size={26} />

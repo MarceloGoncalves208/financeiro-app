@@ -46,6 +46,13 @@ export default function ReportsScreen() {
 
   const reports = [
     {
+      title: 'Lançamentos',
+      description: 'Consultar, editar e excluir lançamentos',
+      icon: 'format-list-bulleted' as const,
+      color: '#7c3aed',
+      screen: 'Lancamentos' as const,
+    },
+    {
       title: 'DRE',
       description: 'Demonstracao do Resultado do Exercicio',
       icon: 'file-chart' as const,

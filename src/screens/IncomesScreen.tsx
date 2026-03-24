@@ -91,7 +91,7 @@ export default function IncomesScreen() {
       <FAB
         icon="plus"
         style={[styles.fab, { backgroundColor: '#06d6a0' }]}
-        onPress={() => navigation.navigate('AddLancamento', { flags: ['R'] })}
+        onPress={() => navigation.navigate('AddLancamento', { flags: ['R', 'AT'] })}
         color="#fff"
       />
     </SafeAreaView>

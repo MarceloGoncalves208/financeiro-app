@@ -1,20 +1,25 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 
-// Tab Navigator
-export type TabParamList = {
+// Drawer Navigator
+export type DrawerParamList = {
   Dashboard: undefined;
   Receitas: undefined;
   Despesas: undefined;
   Relatorios: undefined;
-  Mais: undefined;
+  Configuracoes: undefined;
 };
+
+// Tab Navigator (mantido para compatibilidade)
+export type TabParamList = DrawerParamList & { Mais: undefined };
 
 // Stack Navigator
 export type RootStackParamList = {
-  Main: NavigatorScreenParams<TabParamList>;
+  Main: NavigatorScreenParams<DrawerParamList>;
   AddLancamento: { flags?: string[] };
   AddIncome: { id?: string };
   AddExpense: { id?: string };
+  Lancamentos: undefined;
+  EditLancamento: { id: string };
   DREReport: undefined;
   CashFlowReport: undefined;
   CMVReport: undefined;

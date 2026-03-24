@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   Alert,
-  TouchableOpacity,
+  Platform,
 } from 'react-native';
 import {
   Text,
@@ -13,6 +13,7 @@ import {
   useTheme,
   ActivityIndicator,
   Menu,
+  Divider,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,37 +22,87 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { getPlanoContas, inserirLancamento, PlanoConta } from '../services/lancamentos';
 import { RootStackParamList } from '../navigation/types';
 
+// Persiste a última data usada durante a sessão
+let lastUsedDate: string | null = null;
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 type RouteParams = RouteProp<RootStackParamList, 'AddLancamento'>;
 
+// Plano de contas completo do Gula Grill
 const PLANO_CONTAS_PADRAO: PlanoConta[] = [
-  { cod: 1,    nome: 'Cartão',              flag: 'R',  grupo_cod: null },
-  { cod: 2,    nome: 'Voucher',             flag: 'R',  grupo_cod: null },
-  { cod: 3,    nome: 'Dinheiro',            flag: 'R',  grupo_cod: null },
-  { cod: 101,  nome: 'Buffet',              flag: 'V',  grupo_cod: null },
-  { cod: 102,  nome: 'Churrasqueira',       flag: 'V',  grupo_cod: null },
-  { cod: 103,  nome: 'Lanchonete',          flag: 'V',  grupo_cod: null },
-  { cod: 104,  nome: 'Bebidas',             flag: 'V',  grupo_cod: null },
-  { cod: 105,  nome: 'Frutas / Suco',       flag: 'V',  grupo_cod: null },
-  { cod: 106,  nome: 'Sobremesas',          flag: 'V',  grupo_cod: null },
-  { cod: 201,  nome: 'Salários',            flag: 'F',  grupo_cod: null },
-  { cod: 202,  nome: 'Extra',               flag: 'F',  grupo_cod: null },
-  { cod: 203,  nome: 'Passagem',            flag: 'F',  grupo_cod: null },
-  { cod: 212,  nome: 'Cedae (Água)',        flag: 'F',  grupo_cod: null },
-  { cod: 215,  nome: 'Outros Pessoal',      flag: 'F',  grupo_cod: null },
-  { cod: 301,  nome: 'Descartáveis',        flag: 'F',  grupo_cod: null },
-  { cod: 302,  nome: 'Carvão / Gás / Óleo', flag: 'F', grupo_cod: null },
-  { cod: 303,  nome: 'Gelo',                flag: 'F',  grupo_cod: null },
-  { cod: 305,  nome: 'Manutenção',          flag: 'F',  grupo_cod: null },
-  { cod: 307,  nome: 'Coleta',              flag: 'F',  grupo_cod: null },
-  { cod: 2000, nome: 'Buffet (Atend.)',     flag: 'AT', grupo_cod: null },
-  { cod: 3000, nome: 'Prato Feito',         flag: 'AT', grupo_cod: null },
-  { cod: 4000, nome: 'Churrasco',           flag: 'AT', grupo_cod: null },
+  // Receitas
+  { cod: 1,    nome: 'Cartão',                  flag: 'R',  grupo_cod: null },
+  { cod: 2,    nome: 'Voucher',                 flag: 'R',  grupo_cod: null },
+  { cod: 3,    nome: 'Dinheiro',                flag: 'R',  grupo_cod: null },
+  { cod: 4,    nome: 'Receita iFood',            flag: 'R',  grupo_cod: null },
+  { cod: 5,    nome: 'Receita 99Food',          flag: 'R',  grupo_cod: null },
+  { cod: 6,    nome: 'Receita Keeta',           flag: 'R',  grupo_cod: null },
+  // Vendas / CMV
+  { cod: 101,  nome: 'Buffet',                  flag: 'V',  grupo_cod: null },
+  { cod: 102,  nome: 'Churrasqueira',           flag: 'V',  grupo_cod: null },
+  { cod: 103,  nome: 'Lanchonete',              flag: 'V',  grupo_cod: null },
+  { cod: 104,  nome: 'Bebidas',                 flag: 'V',  grupo_cod: null },
+  { cod: 105,  nome: 'Frutas / Suco',           flag: 'V',  grupo_cod: null },
+  { cod: 106,  nome: 'Sobremesas',              flag: 'V',  grupo_cod: null },
+  // Administrativo
+  { cod: 201,  nome: 'Salários',                flag: 'F',  grupo_cod: null },
+  { cod: 202,  nome: 'Extra',                   flag: 'F',  grupo_cod: null },
+  { cod: 203,  nome: 'Passagem',                flag: 'F',  grupo_cod: null },
+  { cod: 204,  nome: 'FGTS',                    flag: 'F',  grupo_cod: null },
+  { cod: 205,  nome: 'GPS',                     flag: 'F',  grupo_cod: null },
+  { cod: 206,  nome: '13º',                     flag: 'F',  grupo_cod: null },
+  { cod: 207,  nome: 'Férias',                  flag: 'F',  grupo_cod: null },
+  { cod: 208,  nome: 'Rescisão',                flag: 'F',  grupo_cod: null },
+  { cod: 209,  nome: 'Contador',                flag: 'F',  grupo_cod: null },
+  { cod: 210,  nome: 'Simples',                 flag: 'F',  grupo_cod: null },
+  { cod: 211,  nome: 'Aluguel',                 flag: 'F',  grupo_cod: null },
+  { cod: 212,  nome: 'Cedae (Água)',            flag: 'F',  grupo_cod: null },
+  { cod: 213,  nome: 'Telefone',                flag: 'F',  grupo_cod: null },
+  { cod: 214,  nome: 'Dívidas',                 flag: 'F',  grupo_cod: null },
+  { cod: 215,  nome: 'Ueslei',                  flag: 'F',  grupo_cod: null },
+  { cod: 216,  nome: 'Marcelo',                 flag: 'F',  grupo_cod: null },
+  // Operacional
+  { cod: 301,  nome: 'Descartáveis',            flag: 'F',  grupo_cod: null },
+  { cod: 302,  nome: 'Carvão / Gás / Óleo',    flag: 'F',  grupo_cod: null },
+  { cod: 303,  nome: 'Gelo',                    flag: 'F',  grupo_cod: null },
+  { cod: 304,  nome: 'Manutenção M.O.',         flag: 'F',  grupo_cod: null },
+  { cod: 305,  nome: 'Manutenção Material',     flag: 'F',  grupo_cod: null },
+  { cod: 306,  nome: 'Equipamentos',            flag: 'F',  grupo_cod: null },
+  { cod: 307,  nome: 'Coleta',                  flag: 'F',  grupo_cod: null },
+  { cod: 308,  nome: 'Exaustão',                flag: 'F',  grupo_cod: null },
+  // Marketing
+  { cod: 401,  nome: 'Divulgação',              flag: 'F',  grupo_cod: null },
+  // Atendimentos
+  { cod: 2000, nome: 'Buffet (Atend.)',         flag: 'AT', grupo_cod: null },
+  { cod: 3000, nome: 'Prato Feito',             flag: 'AT', grupo_cod: null },
+  { cod: 4000, nome: 'Churrasco',               flag: 'AT', grupo_cod: null },
+  { cod: 5001, nome: 'Entrega iFood',           flag: 'AT', grupo_cod: null },
+  { cod: 5002, nome: 'Entrega 99Food',          flag: 'AT', grupo_cod: null },
+  { cod: 5003, nome: 'Entrega Keeta',           flag: 'AT', grupo_cod: null },
 ];
 
 const FLAG_LABELS: Record<string, string> = {
   R: 'Receitas', V: 'Vendas / CMV', F: 'Despesas', AT: 'Atendimentos',
 };
 const FLAG_ORDER = ['R', 'V', 'F', 'AT'];
+
+// Sub-grupos dentro de Despesas (F) para exibição no menu
+const SUBGRUPO_LABELS: Record<number, string> = {
+  201: 'Administrativo', 202: 'Administrativo', 203: 'Administrativo',
+  204: 'Administrativo', 205: 'Administrativo', 206: 'Administrativo',
+  207: 'Administrativo', 208: 'Administrativo', 209: 'Administrativo',
+  210: 'Administrativo', 211: 'Administrativo', 212: 'Administrativo',
+  213: 'Administrativo', 214: 'Administrativo', 215: 'Administrativo',
+  216: 'Administrativo',
+  301: 'Operacional',    302: 'Operacional',    303: 'Operacional',
+  304: 'Operacional',    305: 'Operacional',    306: 'Operacional',
+  307: 'Operacional',    308: 'Operacional',
+  401: 'Marketing',
+};
 
 export default function AddLancamentoScreen() {
   const theme = useTheme();
@@ -67,9 +118,9 @@ export default function AddLancamentoScreen() {
   const [selectedConta, setSelectedConta] = useState<PlanoConta | null>(null);
   const [valor, setValor] = useState('');
   const [descricao, setDescricao] = useState('');
+  const [data, setData] = useState(lastUsedDate ?? todayStr());
   const [saving, setSaving] = useState(false);
 
-  // Carrega plano de contas
   useEffect(() => {
     getPlanoContas()
       .then((data) => {
@@ -86,64 +137,16 @@ export default function AddLancamentoScreen() {
       .finally(() => setLoadingContas(false));
   }, []);
 
-  // Botão dropdown no header direito
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <Menu
-          visible={menuVisible}
-          onDismiss={() => setMenuVisible(false)}
-          anchor={
-            <TouchableOpacity
-              onPress={() => setMenuVisible(true)}
-              style={styles.headerBtn}
-              disabled={loadingContas}
-            >
-              <MaterialCommunityIcons
-                name="format-list-bulleted"
-                size={24}
-                color={theme.colors.onSurface}
-              />
-              <Text variant="labelMedium" style={{ marginLeft: 4, color: theme.colors.onSurface }}>
-                {selectedConta?.nome ?? 'Conta'}
-              </Text>
-            </TouchableOpacity>
-          }
-        >
-          {FLAG_ORDER.filter((f) => flagFilter.includes(f)).map((flag) => {
-            const contas = planoContas.filter((c) => c.flag === flag);
-            if (!contas.length) return null;
-            return (
-              <React.Fragment key={flag}>
-                <Menu.Item
-                  title={FLAG_LABELS[flag]}
-                  disabled
-                  titleStyle={{ fontWeight: '700', fontSize: 11, opacity: 0.5 }}
-                />
-                {contas.map((conta) => (
-                  <Menu.Item
-                    key={conta.cod}
-                    title={conta.nome}
-                    onPress={() => {
-                      setSelectedConta(conta);
-                      if (!descricao) setDescricao(conta.nome);
-                      setMenuVisible(false);
-                      setTimeout(() => valorRef.current?.focus(), 150);
-                    }}
-                    leadingIcon={selectedConta?.cod === conta.cod ? 'check' : undefined}
-                  />
-                ))}
-              </React.Fragment>
-            );
-          })}
-        </Menu>
-      ),
-    });
-  }, [navigation, menuVisible, planoContas, selectedConta, loadingContas, descricao]);
+  const handleSelectConta = (conta: PlanoConta) => {
+    setSelectedConta(conta);
+    if (!descricao) setDescricao(conta.nome);
+    setMenuVisible(false);
+    setTimeout(() => valorRef.current?.focus(), 150);
+  };
 
   const handleSave = async () => {
     if (!selectedConta) {
-      Alert.alert('Atenção', 'Selecione uma conta pelo menu no topo direito.');
+      Alert.alert('Atenção', 'Selecione uma conta.');
       return;
     }
     const parsedValor = parseFloat(valor.replace(',', '.'));
@@ -153,17 +156,18 @@ export default function AddLancamentoScreen() {
     }
     setSaving(true);
     try {
-      const hoje = new Date();
+      const [ano, mes, dia] = data.split('-').map(Number);
       await inserirLancamento({
-        data: hoje.toISOString().split('T')[0],
+        data,
         cod: selectedConta.cod,
         valor: parsedValor,
         discriminacao: descricao.trim() || selectedConta.nome,
         flag: selectedConta.flag as any,
-        dia: hoje.getDate(),
-        mes: hoje.getMonth() + 1,
-        ano: hoje.getFullYear(),
+        dia,
+        mes,
+        ano,
       });
+      lastUsedDate = data; // guarda para o próximo lançamento
       navigation.goBack();
     } catch {
       Alert.alert('Erro', 'Não foi possível salvar o lançamento.');
@@ -183,6 +187,16 @@ export default function AddLancamentoScreen() {
     );
   }
 
+  // Grupos de contas para o menu
+  const grupos = FLAG_ORDER
+    .filter((f) => flagFilter.includes(f))
+    .map((flag) => ({
+      flag,
+      label: FLAG_LABELS[flag],
+      contas: planoContas.filter((c) => c.flag === flag),
+    }))
+    .filter((g) => g.contas.length > 0);
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
@@ -193,32 +207,91 @@ export default function AddLancamentoScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Indicador da conta selecionada */}
-        <TouchableOpacity
-          style={[styles.contaSelecionada, {
-            backgroundColor: selectedConta ? theme.colors.primaryContainer : theme.colors.surfaceVariant,
-            borderColor: selectedConta ? theme.colors.primary : theme.colors.outline,
-          }]}
-          onPress={() => setMenuVisible(true)}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons
-            name={selectedConta ? 'check-circle' : 'format-list-bulleted'}
-            size={20}
-            color={selectedConta ? theme.colors.primary : theme.colors.onSurfaceVariant}
-          />
-          <Text
-            variant="bodyLarge"
-            style={{
-              marginLeft: 10,
-              flex: 1,
-              color: selectedConta ? theme.colors.primary : theme.colors.onSurfaceVariant,
-              fontWeight: selectedConta ? '600' : '400',
-            }}
+        {/* Seletor de Conta com Menu dropdown */}
+        <View style={styles.menuWrapper}>
+          <Menu
+            visible={menuVisible}
+            onDismiss={() => setMenuVisible(false)}
+            contentStyle={styles.menuContent}
+            anchor={
+              <Button
+                mode="outlined"
+                onPress={() => setMenuVisible(true)}
+                icon={selectedConta ? 'check-circle' : 'menu-down'}
+                contentStyle={styles.selectorContent}
+                style={[
+                  styles.selectorBtn,
+                  {
+                    borderColor: selectedConta ? theme.colors.primary : theme.colors.outline,
+                    backgroundColor: selectedConta
+                      ? theme.colors.primaryContainer
+                      : theme.colors.surface,
+                  },
+                ]}
+                textColor={selectedConta ? theme.colors.primary : theme.colors.onSurface}
+                labelStyle={{ fontSize: 15, fontWeight: selectedConta ? '600' : '400' }}
+              >
+                {selectedConta ? selectedConta.nome : 'Selecionar conta  ▾'}
+              </Button>
+            }
           >
-            {selectedConta ? selectedConta.nome : 'Toque para selecionar a conta ▾'}
+            <ScrollView style={styles.menuScroll} showsVerticalScrollIndicator={false}>
+              {grupos.map((grupo, gi) => (
+                <React.Fragment key={grupo.flag}>
+                  {gi > 0 && <Divider style={{ marginVertical: 4 }} />}
+                  <Menu.Item
+                    title={grupo.label}
+                    disabled
+                    titleStyle={styles.grupoHeader}
+                  />
+                  {grupo.contas.map((conta) => (
+                    <Menu.Item
+                      key={conta.cod}
+                      title={conta.nome}
+                      onPress={() => handleSelectConta(conta)}
+                      leadingIcon={selectedConta?.cod === conta.cod ? 'check' : 'circle-small'}
+                    />
+                  ))}
+                </React.Fragment>
+              ))}
+            </ScrollView>
+          </Menu>
+        </View>
+
+        {/* Data */}
+        <View style={styles.dateWrapper}>
+          <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 6 }}>
+            Data do lançamento
           </Text>
-        </TouchableOpacity>
+          {Platform.OS === 'web' ? (
+            <input
+              type="date"
+              value={data}
+              onChange={e => setData((e.target as HTMLInputElement).value)}
+              style={{
+                border: `1.5px solid ${theme.colors.outline}`,
+                borderRadius: 8,
+                padding: '10px 12px',
+                fontSize: 15,
+                backgroundColor: theme.colors.surface,
+                color: theme.colors.onSurface,
+                outline: 'none',
+                width: '100%',
+                boxSizing: 'border-box',
+              } as any}
+            />
+          ) : (
+            <TextInput
+              value={data}
+              onChangeText={setData}
+              mode="outlined"
+              keyboardType="numeric"
+              placeholder="AAAA-MM-DD"
+              left={<TextInput.Icon icon="calendar" />}
+              style={{ backgroundColor: theme.colors.surface }}
+            />
+          )}
+        </View>
 
         {/* Valor */}
         <TextInput
@@ -231,7 +304,6 @@ export default function AddLancamentoScreen() {
           style={styles.input}
           left={<TextInput.Affix text="R$" />}
           placeholder="0,00"
-          autoFocus={!selectedConta}
         />
 
         {/* Descrição */}
@@ -263,20 +335,34 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: 16 },
-  headerBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  contaSelecionada: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 10,
-    borderWidth: 1.5,
+  menuWrapper: {
     marginBottom: 20,
   },
+  selectorBtn: {
+    borderRadius: 10,
+    borderWidth: 1.5,
+    height: 52,
+  },
+  selectorContent: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    height: 52,
+  },
+  menuContent: {
+    marginTop: 4,
+    borderRadius: 10,
+  },
+  menuScroll: {
+    maxHeight: 380,
+  },
+  grupoHeader: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    opacity: 0.5,
+    textTransform: 'uppercase',
+  },
+  dateWrapper: { marginBottom: 16 },
   input: { marginBottom: 16 },
   btnSalvar: { marginTop: 8, marginBottom: 32, borderRadius: 8 },
   btnSalvarContent: { paddingVertical: 6 },

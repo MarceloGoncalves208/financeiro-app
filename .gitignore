@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.expo/
+.env
+.env.local
+*.log
+
+# chunks temporários
+chunk_*.txt
+
+# build artifacts
+*.js.map
