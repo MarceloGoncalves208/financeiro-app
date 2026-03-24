@@ -9,21 +9,36 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { lightTheme, darkTheme } from './src/theme';
 import { FinanceProvider } from './src/contexts/FinanceContext';
 import { DrawerProvider } from './src/contexts/DrawerContext';
+import { EmpresaProvider, useEmpresa } from './src/contexts/EmpresaContext';
+import SelectEmpresaScreen from './src/screens/SelectEmpresaScreen';
 
-export default function App() {
+function AppContent() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
+  const { empresa } = useEmpresa();
 
   return (
     <PaperProvider theme={theme}>
-      <FinanceProvider>
-        <DrawerProvider>
-          <View style={{ flex: 1 }}>
-            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-            <AppNavigator />
-          </View>
-        </DrawerProvider>
-      </FinanceProvider>
+      <View style={{ flex: 1 }}>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+        {empresa ? (
+          <FinanceProvider>
+            <DrawerProvider>
+              <AppNavigator />
+            </DrawerProvider>
+          </FinanceProvider>
+        ) : (
+          <SelectEmpresaScreen />
+        )}
+      </View>
     </PaperProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <EmpresaProvider>
+      <AppContent />
+    </EmpresaProvider>
   );
 }

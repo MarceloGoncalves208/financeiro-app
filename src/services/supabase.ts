@@ -1,6 +1,18 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { EMPRESAS } from '../config/empresas';
 
-const SUPABASE_URL = 'https://ehvqbrpccnejhnwnjbok.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVodnFicnBjY25lamhud25qYm9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNzI4ODQsImV4cCI6MjA4OTg0ODg4NH0.RHRrXRVZrKGu8e9oqxZxLc21_Ziw5DBU3Tg6_1iNdAg';
+// Estado mutável — trocado ao selecionar empresa
+const _state = {
+  client: createClient(EMPRESAS[0].supabaseUrl, EMPRESAS[0].supabaseKey),
+};
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Proxy: toda chamada a `supabase.from(...)` etc. delega ao cliente atual
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_, prop: string) {
+    return (_state.client as any)[prop];
+  },
+});
+
+export function initSupabase(url: string, key: string) {
+  _state.client = createClient(url, key);
+}

@@ -14,6 +14,7 @@ import {
 import { formatCurrency } from '../utils/helpers';
 import { getLancamentosPeriodo, computeDREMes, Lancamento, DREComputada } from '../services/lancamentos';
 import { pctChange, formatPct } from '../utils/periods';
+import { useEmpresa } from '../contexts/EmpresaContext';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -152,6 +153,7 @@ const TABS = ['Período ant.', 'Mesmo per. ano ant.', 'Mesmo mês ano ant.'];
 
 export default function DashboardScreen() {
   const theme = useTheme();
+  const { empresa, clearEmpresa } = useEmpresa();
   const today = new Date();
 
   const [startDate, setStartDate] = useState(fmt(startOfMonth(today)));
@@ -215,7 +217,13 @@ export default function DashboardScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <View style={styles.header}>
-          <Text variant="headlineSmall" style={{ fontWeight: 'bold' }}>Gula Grill</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text variant="headlineSmall" style={{ fontWeight: 'bold' }}>{empresa?.nome ?? 'App Financeiro'}</Text>
+            <TouchableOpacity onPress={clearEmpresa} style={styles.switchBtn}>
+              <MaterialCommunityIcons name="swap-horizontal" size={18} color={theme.colors.onSurfaceVariant} />
+              <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 4 }}>Trocar</Text>
+            </TouchableOpacity>
+          </View>
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
             {fmtBR(applied.start)} – {fmtBR(applied.end)} · {duration} dia{duration !== 1 ? 's' : ''}
           </Text>
@@ -407,6 +415,7 @@ const styles = StyleSheet.create({
   marginRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 16 },
   marginItem: { alignItems: 'center', gap: 2 },
   tab: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20 },
+  switchBtn: { flexDirection: 'row', alignItems: 'center', padding: 6 },
   ticketRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     marginTop: 12, borderRadius: 8, padding: 12,
